@@ -11,7 +11,7 @@ export default function DailyBloomPage() {
         <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">Daily Bloom</p>
         <h1 className="text-4xl font-semibold uppercase">Today’s Bloom</h1>
         {latest ? (
-          <div className="rounded-3xl border border-neutral-800 bg-neutral-900/60 p-8">
+          <div className="rounded-3xl border border-neutral-800 p-8">
             <p className="whitespace-pre-line text-lg text-neutral-100">{latest.content}</p>
             <p className="mt-4 text-xs uppercase text-neutral-500">{latest.createdAt}</p>
           </div>
