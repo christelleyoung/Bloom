@@ -50,3 +50,10 @@ export function listBlooms(limit = 10): BloomLog[] {
   );
   return stmt.all(limit) as BloomLog[];
 }
+
+export function getLatestBloom(status: BloomLog["status"] = "sent") {
+  const stmt = db.prepare(
+    "SELECT id, created_at as createdAt, mode, intensity, content, status FROM blooms WHERE status = ? ORDER BY id DESC LIMIT 1"
+  );
+  return stmt.get(status) as BloomLog | undefined;
+}

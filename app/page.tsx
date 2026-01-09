@@ -24,7 +24,7 @@ export default function HomePage() {
         <div className="space-y-6">
           <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">Bloombiatch</p>
           <h1 className="text-5xl font-semibold uppercase leading-tight md:text-6xl">
-            <span className="gradient-text">Bloom, bitch.</span>
+            <span className="gradient-text">Bloom, biatch.</span>
           </h1>
           <p className="max-w-2xl text-xl text-neutral-300">
             Savage motivation for people doing hard things.
@@ -60,9 +60,26 @@ export default function HomePage() {
           <div className="rounded-3xl border border-neutral-800 bg-neutral-900/60 p-10">
             <h2 className="text-3xl font-semibold uppercase">Get the daily Bloom</h2>
             <p className="mt-3 text-neutral-300">
-              Drop your email. We send savage, screenshot-worthy motivation.
+              No crappy newsletter. Just short, sharp inspiration. That’s it.
             </p>
             <EmailSignup />
+          </div>
+        </div>
+      </section>
+
+      <section id="daily" className="bg-neutral-900/60 py-20">
+        <div className="mx-auto max-w-3xl px-6">
+          <div className="rounded-3xl border border-neutral-800 bg-neutral-950/60 p-10">
+            <h2 className="text-3xl font-semibold uppercase">Or don’t sign up</h2>
+            <p className="mt-3 text-neutral-300">
+              Just get your daily inspo now. Press the button for your live daily Bloom.
+            </p>
+            <a
+              className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold uppercase text-neutral-950"
+              href="/daily"
+            >
+              Get today’s Bloom
+            </a>
           </div>
         </div>
       </section>
