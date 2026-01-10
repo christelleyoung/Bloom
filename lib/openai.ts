@@ -13,6 +13,7 @@ Rules:
 - Tough love = belief + push, not humiliation.
 - Output 3-6 short lines, punchy and screenshot-ready.
 - Each line should be under 80 characters.
+- If personalization fits, use {{ subscriber.first_name }} once.
 - No emojis, no hashtags, no long paragraphs.`;
 
 type BloomOptions = {

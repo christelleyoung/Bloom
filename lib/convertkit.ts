@@ -21,7 +21,19 @@ async function parseKitResponse(response: Response, fallbackMessage: string) {
   return payload;
 }
 
-export async function subscribeToKit(email: string) {
+type SubscribePayload = {
+  email: string;
+  firstName?: string;
+  bloomProblem?: string;
+  bloomIntensity?: string;
+};
+
+export async function subscribeToKit({
+  email,
+  firstName,
+  bloomProblem,
+  bloomIntensity,
+}: SubscribePayload) {
   const { apiKey, formId } = getConfig();
 
   if (!formId) {
@@ -31,7 +43,15 @@ export async function subscribeToKit(email: string) {
   const response = await fetch(`${BASE_URL}/forms/${formId}/subscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ api_key: apiKey, email }),
+    body: JSON.stringify({
+      api_key: apiKey,
+      email,
+      first_name: firstName || undefined,
+      fields: {
+        bloom_problem: bloomProblem || undefined,
+        bloom_intensity: bloomIntensity || undefined,
+      },
+    }),
   });
 
   await parseKitResponse(response, "Failed to subscribe.");

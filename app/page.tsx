@@ -47,7 +47,7 @@ export default function HomePage() {
       </section>
 
       <section id="manifesto" className="py-20">
-        <div className="mx-auto max-w-4xl px-6">
+        <div className="mx-auto max-w-5xl px-6">
           <h2 className="mb-8 text-3xl font-semibold uppercase">Manifesto</h2>
           <pre className="whitespace-pre-wrap text-lg text-neutral-200">
             {manifesto}
@@ -55,7 +55,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="signup" className="py-20">
+      <section id="signup" className="py-16">
         <div className="mx-auto max-w-3xl px-6">
           <div className="rounded-3xl border border-neutral-800 p-10">
             <h2 className="text-3xl font-semibold uppercase">Get the daily Bloom</h2>
@@ -67,13 +67,22 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="daily" className="py-20">
+      <section id="daily" className="py-16">
         <div className="mx-auto max-w-3xl px-6">
           <DailyBloomClient
             kicker="No signup"
             title="Or don’t sign up... I don’t care."
             description="Just take today’s kick in the ass and go. No commitment. No inbox. No excuses."
           />
+        </div>
+      </section>
+
+      <section className="pb-32 pt-40">
+        <div className="mx-auto max-w-4xl px-6 text-center">
+          <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">Still scrolling?</p>
+          <p className="mt-4 text-lg text-neutral-400">
+            If you’re trying to find a sign, scrolling will get you nowhere. Just sign up and bloom.
+          </p>
         </div>
       </section>
 
