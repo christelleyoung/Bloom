@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 export default function AdminPage() {
   const isAuthed = cookies().get("bloombiatch-admin")?.value === "true";
   const logs = listBlooms(10);
+  const sequenceId = process.env.CONVERTKIT_SEQUENCE_ID || "Not set";
 
   if (!isAuthed) {
     return (
@@ -47,7 +48,7 @@ export default function AdminPage() {
             Generate, edit, and approve the savage daily Bloom. Nothing sends without your click.
           </p>
         </header>
-        <AdminClient />
+        <AdminClient sequenceId={sequenceId} />
         <section className="rounded-3xl border border-neutral-800 bg-neutral-900/60 p-8">
           <h2 className="text-xl font-semibold uppercase">Recent Logs</h2>
           <div className="mt-4 space-y-4">

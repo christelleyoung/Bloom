@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { generateBloomMessage, getFallbackBloomMessage, validateBloomMessage } from "@/lib/openai";
 import { createBloom, updateBloom } from "@/lib/db";
-import { sendApprovedBloom } from "@/lib/convertkit";
+import { sendApprovedBloom, sendTestBloom } from "@/lib/convertkit";
 
 const MAX_ATTEMPTS = 3;
 
@@ -64,11 +64,39 @@ export async function approveBloom(
 
   try {
     // Only approved content is sent to Kit.
-    await sendApprovedBloom(content);
+    const kitResponse = await sendApprovedBloom(content);
     updateBloom(logId, { status: "sent" });
-    return { message: "Approved and scheduled in Kit." };
+    const details =
+      typeof kitResponse?.id === "number"
+        ? `Kit broadcast ID: ${kitResponse.id}`
+        : kitResponse?.message || "";
+    return { message: "Approved and scheduled in Kit.", details };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to send to Kit.";
-    return { message };
+    return { message, details: "" };
+  }
+}
+
+export async function sendTestEmail(
+  prevState: { message: string; details: string },
+  formData: FormData
+) {
+  const email = String(formData.get("email") || "").trim();
+  const content = String(formData.get("content") || "").trim();
+
+  if (!email || !content) {
+    return { message: "Test email and content are required.", details: "" };
+  }
+
+  try {
+    const kitResponse = await sendTestBloom(email, content);
+    const details =
+      typeof kitResponse?.id === "number"
+        ? `Kit test broadcast ID: ${kitResponse.id}`
+        : kitResponse?.message || "";
+    return { message: "Test email sent.", details };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to send test email.";
+    return { message, details: "" };
   }
 }

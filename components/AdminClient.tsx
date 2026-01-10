@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
-import { approveBloom, generateBloom } from "@/app/admin/actions";
+import { approveBloom, generateBloom, sendTestEmail } from "@/app/admin/actions";
 
 const initialGenerateState = {
   message: "",
@@ -12,13 +12,25 @@ const initialGenerateState = {
 
 const initialApproveState = {
   message: "",
+  details: "",
 };
 
-export default function AdminClient() {
+const initialTestState = {
+  message: "",
+  details: "",
+};
+
+type AdminClientProps = {
+  sequenceId: string;
+};
+
+export default function AdminClient({ sequenceId }: AdminClientProps) {
   const [generateState, generateAction] = useFormState(generateBloom, initialGenerateState);
   const [approveState, approveAction] = useFormState(approveBloom, initialApproveState);
+  const [testState, testAction] = useFormState(sendTestEmail, initialTestState);
   const [draft, setDraft] = useState("");
   const [logId, setLogId] = useState<number | null>(null);
+  const [testEmail, setTestEmail] = useState("");
 
   useEffect(() => {
     if (generateState.message) {
@@ -98,12 +110,46 @@ export default function AdminClient() {
             Reset Draft
           </button>
           <span className="text-xs text-neutral-400">
-            Approving sends the message to Kit. No approval = no send.
+            Approving sends the message to Kit. Target: sequence {sequenceId}.
           </span>
         </form>
         {approveState.message ? (
-          <p className="text-sm text-emerald-300">{approveState.message}</p>
+          <p className="text-sm text-emerald-300">
+            {approveState.message}
+            {approveState.details ? ` (${approveState.details})` : ""}
+          </p>
         ) : null}
+        <div className="mt-4 border-t border-neutral-800 pt-4">
+          <p className="text-xs uppercase text-neutral-400">Send test email</p>
+          <p className="mt-2 text-sm text-neutral-400">
+            Sends a test broadcast to a single address via Kit.
+          </p>
+          <form action={testAction} className="mt-4 flex flex-col gap-3">
+            <input
+              type="email"
+              name="email"
+              placeholder="test@domain.com"
+              className="w-full rounded-full border border-neutral-700 bg-neutral-950 px-5 py-3 text-sm text-neutral-100 placeholder:text-neutral-600"
+              value={testEmail}
+              onChange={(event) => setTestEmail(event.target.value)}
+              required
+            />
+            <input type="hidden" name="content" value={draft} />
+            <button
+              type="submit"
+              className="w-fit rounded-full border border-neutral-700 px-6 py-3 text-xs font-semibold uppercase text-neutral-100"
+              disabled={!draft}
+            >
+              Send test email
+            </button>
+          </form>
+          {testState.message ? (
+            <p className="mt-3 text-sm text-emerald-300">
+              {testState.message}
+              {testState.details ? ` (${testState.details})` : ""}
+            </p>
+          ) : null}
+        </div>
       </div>
     </section>
   );

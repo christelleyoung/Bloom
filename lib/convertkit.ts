@@ -13,6 +13,14 @@ function getConfig() {
   return { apiKey, formId, sequenceId };
 }
 
+async function parseKitResponse(response: Response, fallbackMessage: string) {
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.message || fallbackMessage);
+  }
+  return payload;
+}
+
 export async function subscribeToKit(email: string) {
   const { apiKey, formId } = getConfig();
 
@@ -26,10 +34,7 @@ export async function subscribeToKit(email: string) {
     body: JSON.stringify({ api_key: apiKey, email }),
   });
 
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload?.message || "Failed to subscribe.");
-  }
+  await parseKitResponse(response, "Failed to subscribe.");
 }
 
 export async function sendApprovedBloom(content: string) {
@@ -45,8 +50,21 @@ export async function sendApprovedBloom(content: string) {
     body: JSON.stringify({ api_key: apiKey, subject: "Daily Bloom", content }),
   });
 
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload?.message || "Failed to send broadcast.");
-  }
+  return parseKitResponse(response, "Failed to send broadcast.");
+}
+
+export async function sendTestBloom(email: string, content: string) {
+  const { apiKey } = getConfig();
+  const response = await fetch(`${BASE_URL}/broadcasts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      api_key: apiKey,
+      subject: "Daily Bloom (Test)",
+      content,
+      email_address: email,
+    }),
+  });
+
+  return parseKitResponse(response, "Failed to send test broadcast.");
 }
