@@ -1,19 +1,10 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { generateBloomMessage, getFallbackBloomMessage, validateBloomMessage } from "@/lib/openai";
 import { createBloom, updateBloom } from "@/lib/db";
 import { sendApprovedBloom, sendTestBloom } from "@/lib/convertkit";
 
 const MAX_ATTEMPTS = 3;
-
-export async function login(formData: FormData) {
-  const password = formData.get("password");
-  if (password && password === process.env.ADMIN_PASSWORD) {
-    // MVP-only cookie gate for /admin.
-    cookies().set("bloombiatch-admin", "true", { httpOnly: true, sameSite: "strict" });
-  }
-}
 
 export async function generateBloom(
   _prevState: { message: string; logId: number | null; error: string },

@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import AdminClient from "@/components/AdminClient";
 import { listBlooms } from "@/lib/db";
-import { login } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +17,7 @@ export default function AdminPage() {
           <p className="mt-2 text-sm text-neutral-400">
             Enter the admin password to generate and approve Blooms.
           </p>
-          <form action={login} className="mt-6 flex flex-col gap-4">
+          <form action="/api/admin/login" method="POST" className="mt-6 flex flex-col gap-4">
             <input
               type="password"
               name="password"
