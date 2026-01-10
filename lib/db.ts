@@ -1,51 +1,65 @@
-import Database from "better-sqlite3";
-import fs from "fs";
-import path from "path";
-
-export type BloomStatus = "draft" | "approved" | "sent";
-
 export type BloomLog = {
   id: number;
-  created_at: string;
+  createdAt: string;
+  mode: string;
+  intensity: string;
   content: string;
-  status: BloomStatus;
+  status: "draft" | "approved" | "sent";
 };
 
-const dataDir = path.join(process.cwd(), "data");
-const dbPath = path.join(dataDir, "bloom.db");
+// Local JSON storage for drafts + approvals (avoids native deps).
+const dbPath = process.env.DB_PATH || "data/bloombiatch.json";
 
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+type BloomStore = {
+  lastId: number;
+  blooms: BloomLog[];
+};
+
+const defaultStore: BloomStore = { lastId: 0, blooms: [] };
+
+function readStore(): BloomStore {
+  try {
+    const raw = require("fs").readFileSync(dbPath, "utf-8");
+    return JSON.parse(raw) as BloomStore;
+  } catch {
+    return { ...defaultStore };
+  }
 }
 
-const db = new Database(dbPath);
+function writeStore(store: BloomStore) {
+  const fs = require("fs");
+  fs.mkdirSync(require("path").dirname(dbPath), { recursive: true });
+  fs.writeFileSync(dbPath, JSON.stringify(store, null, 2));
+}
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS bloom_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at TEXT NOT NULL,
-    content TEXT NOT NULL,
-    status TEXT NOT NULL
-  );
-`);
+export function createBloom(data: Omit<BloomLog, "id" | "createdAt">) {
+  const store = readStore();
+  const nextId = store.lastId + 1;
+  const bloom: BloomLog = {
+    id: nextId,
+    createdAt: new Date().toISOString(),
+    ...data,
+  };
+  store.lastId = nextId;
+  store.blooms.unshift(bloom);
+  writeStore(store);
+  return nextId;
+}
 
-export const logBloom = (content: string, status: BloomStatus) => {
-  const stmt = db.prepare(
-    "INSERT INTO bloom_logs (created_at, content, status) VALUES (?, ?, ?)"
-  );
-  const createdAt = new Date().toISOString();
-  const info = stmt.run(createdAt, content, status);
-  return { id: info.lastInsertRowid as number, created_at: createdAt };
-};
+export function updateBloom(id: number, updates: Partial<Omit<BloomLog, "id" | "createdAt">>) {
+  const store = readStore();
+  const index = store.blooms.findIndex((bloom) => bloom.id === id);
+  if (index === -1) return;
+  store.blooms[index] = { ...store.blooms[index], ...updates };
+  writeStore(store);
+}
 
-export const updateBloomStatus = (id: number, status: BloomStatus) => {
-  const stmt = db.prepare("UPDATE bloom_logs SET status = ? WHERE id = ?");
-  stmt.run(status, id);
-};
+export function listBlooms(limit = 10): BloomLog[] {
+  const store = readStore();
+  return store.blooms.slice(0, limit);
+}
 
-export const getRecentBlooms = (limit = 10): BloomLog[] => {
-  const stmt = db.prepare(
-    "SELECT id, created_at, content, status FROM bloom_logs ORDER BY id DESC LIMIT ?"
-  );
-  return stmt.all(limit) as BloomLog[];
-};
+export function getLatestBloom(status: BloomLog["status"] = "sent") {
+  const store = readStore();
+  return store.blooms.find((bloom) => bloom.status === status);
+}
