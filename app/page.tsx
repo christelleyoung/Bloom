@@ -77,7 +77,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="pb-32 pt-40">
+      <section className="pb-40 pt-56">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">Still scrolling?</p>
           <p className="mt-4 text-lg text-neutral-400">
@@ -102,3 +102,4 @@ export default function HomePage() {
     </main>
   );
 }
+
