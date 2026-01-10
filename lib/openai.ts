@@ -51,7 +51,7 @@ const bannedPhrases = [
 export function validateBloomMessage(message: string) {
   if (!message) return false;
   const lines = message.split(/\n/).filter((line) => line.trim().length > 0);
-  if (lines.length < 3 || lines.length > 6) return false;
+  if (lines.length < 2 || lines.length > 8) return false;
   const lower = message.toLowerCase();
   if (bannedPhrases.some((phrase) => lower.includes(phrase))) return false;
   return true;
