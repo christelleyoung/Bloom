@@ -1,3 +1,4 @@
+import DailyBloomClient from "@/components/DailyBloomClient";
 import EmailSignup from "@/components/EmailSignup";
 
 const manifesto = `You want the glow? Earn it.
@@ -68,18 +69,11 @@ export default function HomePage() {
 
       <section id="daily" className="py-20">
         <div className="mx-auto max-w-3xl px-6">
-          <div className="rounded-3xl border border-neutral-800 p-10">
-            <h2 className="text-3xl font-semibold uppercase">Or don’t sign up... I don’t care.</h2>
-            <p className="mt-3 text-neutral-300">
-              Just take today’s kick in the ass and go. No commitment. No inbox. No excuses.
-            </p>
-            <a
-              className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold uppercase text-neutral-950"
-              href="/daily"
-            >
-              Get today’s Bloom
-            </a>
-          </div>
+          <DailyBloomClient
+            kicker="No signup"
+            title="Or don’t sign up... I don’t care."
+            description="Just take today’s kick in the ass and go. No commitment. No inbox. No excuses."
+          />
         </div>
       </section>
 

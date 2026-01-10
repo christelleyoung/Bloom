@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 
-export default function DailyBloomClient() {
+type DailyBloomClientProps = {
+  kicker?: string;
+  title?: string;
+  description?: string;
+};
+
+export default function DailyBloomClient({
+  kicker = "Daily Bloom",
+  title = "Today’s Bloom",
+  description = "Tap the button and we’ll generate a fresh Bloom right now.",
+}: DailyBloomClientProps) {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [error, setError] = useState("");
@@ -26,11 +36,9 @@ export default function DailyBloomClient() {
 
   return (
     <div className="rounded-3xl border border-neutral-800 p-8">
-      <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">Daily Bloom</p>
-      <h1 className="mt-2 text-4xl font-semibold uppercase">Today’s Bloom</h1>
-      <p className="mt-3 text-neutral-300">
-        Tap the button and we’ll generate a fresh Bloom right now.
-      </p>
+      <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">{kicker}</p>
+      <h1 className="mt-2 text-4xl font-semibold uppercase">{title}</h1>
+      <p className="mt-3 text-neutral-300">{description}</p>
       <button
         type="button"
         onClick={generate}
