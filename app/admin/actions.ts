@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { generateBloomMessage, validateBloomMessage } from "@/lib/openai";
+import { generateBloomMessage, getFallbackBloomMessage, validateBloomMessage } from "@/lib/openai";
 import { createBloom, updateBloom } from "@/lib/db";
 import { sendApprovedBloom } from "@/lib/convertkit";
 
@@ -39,11 +39,14 @@ export async function generateBloom(
     }
   }
 
-  return {
-    message: "",
-    logId: null,
-    error: "Generation failed validation. Try again.",
-  };
+  const fallback = getFallbackBloomMessage();
+  const logId = createBloom({
+    mode,
+    intensity,
+    content: fallback,
+    status: "draft",
+  });
+  return { message: fallback, logId, error: "" };
 }
 
 export async function approveBloom(

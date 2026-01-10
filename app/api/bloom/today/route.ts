@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateBloomMessage, validateBloomMessage } from "@/lib/openai";
+import { generateBloomMessage, getFallbackBloomMessage, validateBloomMessage } from "@/lib/openai";
 
 const MAX_ATTEMPTS = 3;
 
@@ -19,5 +19,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ error: "Generation failed validation." }, { status: 500 });
+  return NextResponse.json({ message: getFallbackBloomMessage() });
 }
