@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+
 import { subscribeEmail } from "@/lib/convertkit";
+
 
 export async function POST(request: Request) {
   const { email } = await request.json();

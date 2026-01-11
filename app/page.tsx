@@ -1,3 +1,4 @@
+
 import EmailSignup from "@/components/EmailSignup";
 
 const manifesto = `I am not your therapist.
@@ -10,12 +11,15 @@ No soft lies.
 No sugar-coating.
 No hiding in your excuses.
 
-You are allowed to feel the fear.
+You are not fragile.
+You are under-trained.
+ 
+You are allowed to feel the fear. You are allowed to cry. 
 You are not allowed to stay there.
 
 Get up.
 Do the thing.
-Bloom, bitch.`;
+Bloom, biatch.`;
 
 export default function HomePage() {
   return (
@@ -25,7 +29,7 @@ export default function HomePage() {
           BLOOMBIATCH
         </p>
         <h1 className="mt-4 text-5xl font-semibold leading-tight sm:text-6xl">
-          Bloom, bitch.
+          Bloom, biatch.
         </h1>
         <p className="mt-6 max-w-xl text-lg text-neutral-300">
           Savage motivation for people doing hard things.
@@ -53,6 +57,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-4xl">
           <h2 className="text-3xl font-semibold">The Bloombiatch Manifesto</h2>
           <pre className="mt-6 whitespace-pre-wrap text-lg leading-relaxed text-neutral-200">
+
             {manifesto}
           </pre>
         </div>

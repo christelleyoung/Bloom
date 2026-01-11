@@ -74,6 +74,7 @@ Relevant files:
 
 ## Connect bloombiatch.com
 
+
 1. Add the domain in Vercel under Project Settings → Domains.
 2. Update your DNS provider with the Vercel DNS records.
 3. Wait for SSL provisioning to finish.
