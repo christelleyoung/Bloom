@@ -5,11 +5,11 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
-      },
-    },
+        sans: ["ui-sans-serif", "system-ui", "sans-serif"]
+      }
+    }
   },
-  plugins: [],
+  plugins: []
 };
 
 export default config;

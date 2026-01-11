@@ -1,48 +1,85 @@
 # Bloombiatch
 
-A savage, text-first landing page plus an internal AI content generator for the Bloombiatch brand.
+Savage motivation for people doing hard things. This repo contains the public landing page and an internal admin tool for generating and approving daily Blooms.
 
-## Local setup
+## Tech Stack
+
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- ConvertKit (Kit)
+- OpenAI API
+- SQLite (local persistence)
+
+## Local Setup
 
 ```bash
 npm install
-cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Create a `.env.local` file with:
 
-## Environment variables
+```
+OPENAI_API_KEY=your_openai_key
+CONVERTKIT_API_KEY=your_convertkit_key
+CONVERTKIT_FORM_ID=your_form_id
+CONVERTKIT_SEQUENCE_ID=your_sequence_id
+ADMIN_PASSWORD=choose_a_password
+```
 
-- `OPENAI_API_KEY`: OpenAI API key for message generation.
-- `CONVERTKIT_API_KEY`: Kit API key.
-- `CONVERTKIT_FORM_ID`: Kit form ID for the public signup.
-- `CONVERTKIT_SEQUENCE_ID`: Kit sequence ID used to send approved Blooms.
-- `ADMIN_PASSWORD`: Password for the `/admin` route.
-- `DB_PATH`: Optional JSON storage path (defaults to `data/bloombiatch.json`).
+Visit:
+- `http://localhost:3000` for the landing page
+- `http://localhost:3000/admin` for the admin generator
 
-## How AI generation works
+## How AI Generation Works
 
-The admin panel calls `generateBloomMessage` in `lib/openai.ts` with a strict system prompt. The result is validated for line count and banned phrases. Invalid generations are retried up to three times.
+The admin dashboard calls `/api/generate`, which uses a strict system prompt to generate a 3–6 line Bloom. The server validates the output against forbidden content rules (no therapy language, no self-harm, no identity insults). If validation fails, it regenerates automatically up to 4 attempts. Generated Blooms are logged as `draft` in SQLite.
 
-## Approval → email send flow
+Relevant files:
+- `app/api/generate/route.ts`
+- `lib/openai.ts`
+- `lib/db.ts`
 
-1. Generate a draft in `/admin`.
-2. Edit the draft in the text area.
-3. Click **Approve & Schedule** to mark the log as `approved` and send it to Kit.
-4. If Kit succeeds, the status updates to `sent`.
+## Approval → Email Send Flow
 
-Drafts are stored in a local JSON file (`lib/db.ts`). Unapproved drafts are never sent.
+1. Admin clicks **Generate today's Bloom**.
+2. Admin edits (optional) and clicks **Approve & Schedule**.
+3. `/api/approve` stores the content as `approved` and sends it to ConvertKit.
+4. On success, the log updates to `sent`.
 
-## Deploying to Vercel
+Delivery can be either:
+- **Broadcast** (default) via `/v3/broadcasts`
+- **Sequence** via `/v3/sequence_mails`
+
+Relevant files:
+- `app/admin/AdminDashboard.tsx`
+- `app/api/approve/route.ts`
+- `lib/convertkit.ts`
+
+## Email Signup
+
+The landing page form posts to `/api/subscribe` and subscribes users to your ConvertKit form.
+
+Relevant files:
+- `components/EmailSignup.tsx`
+- `app/api/subscribe/route.ts`
+
+## Deploy to Vercel
 
 1. Push this repo to GitHub.
-2. Import the project in Vercel.
-3. Add the environment variables from `.env.example`.
+2. Create a new Vercel project and import the repo.
+3. Set the environment variables in Vercel (same as `.env.local`).
 4. Deploy.
 
 ## Connect bloombiatch.com
 
-1. In Vercel, go to **Project Settings → Domains**.
-2. Add `bloombiatch.com` and follow the DNS instructions.
-3. Set the root domain and `www` as desired.
+
+1. Add the domain in Vercel under Project Settings → Domains.
+2. Update your DNS provider with the Vercel DNS records.
+3. Wait for SSL provisioning to finish.
+
+## Notes
+
+- SQLite is used for the MVP log. For production persistence on serverless, swap `lib/db.ts` to Vercel KV or Supabase.
+- Approval is required before any email is sent.

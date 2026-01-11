@@ -1,74 +1,73 @@
-// Simple Kit client for subscriptions + approved sends.
-const BASE_URL = "https://api.convertkit.com/v3";
+const CONVERTKIT_API_KEY = process.env.CONVERTKIT_API_KEY;
+const CONVERTKIT_FORM_ID = process.env.CONVERTKIT_FORM_ID;
+const CONVERTKIT_SEQUENCE_ID = process.env.CONVERTKIT_SEQUENCE_ID;
 
-function getConfig() {
-  const apiKey = process.env.CONVERTKIT_API_KEY;
-  const formId = process.env.CONVERTKIT_FORM_ID;
-  const sequenceId = process.env.CONVERTKIT_SEQUENCE_ID;
+const baseUrl = "https://api.convertkit.com/v3";
 
-  if (!apiKey) {
-    throw new Error("Missing CONVERTKIT_API_KEY.");
+export const subscribeEmail = async (email: string) => {
+  if (!CONVERTKIT_API_KEY || !CONVERTKIT_FORM_ID) {
+    throw new Error("ConvertKit is not configured.");
   }
 
-  return { apiKey, formId, sequenceId };
-}
+  const response = await fetch(`${baseUrl}/forms/${CONVERTKIT_FORM_ID}/subscribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ api_key: CONVERTKIT_API_KEY, email })
+  });
 
-async function parseKitResponse(response: Response, fallbackMessage: string) {
-  const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload?.message || fallbackMessage);
+    const data = await response.json();
+    throw new Error(data.message || "ConvertKit subscription failed.");
   }
-  return payload;
-}
 
-type SubscribePayload = {
-  email: string;
+  return response.json();
 };
 
-export async function subscribeToKit({ email }: SubscribePayload) {
-  const { apiKey, formId } = getConfig();
-
-  if (!formId) {
-    throw new Error("Missing CONVERTKIT_FORM_ID.");
+export const sendBroadcast = async (subject: string, content: string) => {
+  if (!CONVERTKIT_API_KEY) {
+    throw new Error("ConvertKit is not configured.");
   }
 
-  const response = await fetch(`${BASE_URL}/forms/${formId}/subscribe`, {
+  const payload: Record<string, string> = {
+    api_key: CONVERTKIT_API_KEY,
+    email_subject: subject,
+    email_content: content
+  };
+
+  const response = await fetch(`${baseUrl}/broadcasts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ api_key: apiKey, email }),
+    body: JSON.stringify(payload)
   });
 
-  await parseKitResponse(response, "Failed to subscribe.");
-}
-
-export async function sendApprovedBloom(content: string) {
-  const { apiKey, sequenceId } = getConfig();
-
-  if (!sequenceId) {
-    throw new Error("Missing CONVERTKIT_SEQUENCE_ID.");
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.message || "ConvertKit broadcast failed.");
   }
 
-  const response = await fetch(`${BASE_URL}/sequences/${sequenceId}/broadcasts`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ api_key: apiKey, subject: "Daily Bloom", content }),
-  });
+  return response.json();
+};
 
-  return parseKitResponse(response, "Failed to send broadcast.");
-}
+export const sendSequenceStep = async (subject: string, content: string) => {
+  if (!CONVERTKIT_API_KEY || !CONVERTKIT_SEQUENCE_ID) {
+    throw new Error("ConvertKit sequence is not configured.");
+  }
 
-export async function sendTestBloom(email: string, content: string) {
-  const { apiKey } = getConfig();
-  const response = await fetch(`${BASE_URL}/broadcasts`, {
+  const response = await fetch(`${baseUrl}/sequence_mails`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      api_key: apiKey,
-      subject: "Daily Bloom (Test)",
-      content,
-      email_address: email,
-    }),
+      api_key: CONVERTKIT_API_KEY,
+      sequence_id: CONVERTKIT_SEQUENCE_ID,
+      subject,
+      content
+    })
   });
 
-  return parseKitResponse(response, "Failed to send test broadcast.");
-}
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.message || "ConvertKit sequence failed.");
+  }
+
+  return response.json();
+};
