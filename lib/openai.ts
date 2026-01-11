@@ -5,7 +5,14 @@ const apiKey = process.env.OPENAI_API_KEY;
 export const openai = apiKey
   ? new OpenAI({ apiKey })
   : null;
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const getClient = () => {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OpenAI is not configured.");
+  }
+
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+};
 
 // Guardrail-heavy system prompt to keep tone savage but safe.
 const SYSTEM_PROMPT = `You are BLOOMBIATCH, a savage best-friend voice.
@@ -50,7 +57,7 @@ function coerceBloomMessage(message: string) {
 }
 
 export async function generateBloomMessage({ mode, intensity }: BloomOptions) {
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
