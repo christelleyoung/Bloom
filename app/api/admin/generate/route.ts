@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { generateBloomDraft } from "@/lib/admin";
 
 export async function POST(request: Request) {
-  const isAuthed = cookies().get("bloombiatch-admin")?.value === "true";
+  const isAuthed = cookies().get("bloom_admin")?.value === "true";
   if (!isAuthed) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
