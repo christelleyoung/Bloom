@@ -1,4 +1,3 @@
-import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 
@@ -13,104 +12,143 @@ export type BloomLog = {
   intensity?: string | null;
 };
 
+type BloomStore = {
+  nextId: number;
+  blooms: BloomLog[];
+};
+
 const dataDir = path.join(process.cwd(), "data");
-const dbPath = path.join(dataDir, "bloom.db");
+const dataFile = path.join(dataDir, "bloombiatch.json");
 
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
+const ensureDataDir = () => {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+};
 
-const db = new Database(dbPath);
+const computeNextId = (blooms: BloomLog[]) =>
+  blooms.reduce((max, bloom) => Math.max(max, bloom.id || 0), 0) + 1;
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS bloom_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at TEXT NOT NULL,
-    content TEXT NOT NULL,
-    status TEXT NOT NULL
-  );
-`);
+const readStore = (): BloomStore => {
+  ensureDataDir();
 
-// Lightweight migration for mode/intensity (won't crash if already exists)
-try {
-  db.exec(`ALTER TABLE bloom_logs ADD COLUMN mode TEXT;`);
-} catch {}
-try {
-  db.exec(`ALTER TABLE bloom_logs ADD COLUMN intensity TEXT;`);
-} catch {}
+  if (!fs.existsSync(dataFile)) {
+    return { nextId: 1, blooms: [] };
+  }
 
-// --- Existing API used by your routes ---
+  try {
+    const raw = fs.readFileSync(dataFile, "utf8");
+    const parsed = JSON.parse(raw) as BloomStore | BloomLog[] | null;
+
+    if (Array.isArray(parsed)) {
+      return { nextId: computeNextId(parsed), blooms: parsed };
+    }
+
+    if (parsed && Array.isArray(parsed.blooms)) {
+      return {
+        nextId: Number.isFinite(parsed.nextId)
+          ? Number(parsed.nextId)
+          : computeNextId(parsed.blooms),
+        blooms: parsed.blooms
+      };
+    }
+  } catch {
+    return { nextId: 1, blooms: [] };
+  }
+
+  return { nextId: 1, blooms: [] };
+};
+
+const writeStore = (store: BloomStore) => {
+  ensureDataDir();
+  fs.writeFileSync(dataFile, JSON.stringify(store, null, 2));
+};
+
+const updateStore = (updater: (store: BloomStore) => void) => {
+  const store = readStore();
+  updater(store);
+  writeStore(store);
+};
+
 export const logBloom = (content: string, status: BloomStatus) => {
-  const stmt = db.prepare(
-    "INSERT INTO bloom_logs (created_at, content, status) VALUES (?, ?, ?)"
-  );
   const createdAt = new Date().toISOString();
-  const info = stmt.run(createdAt, content, status);
-  return { id: info.lastInsertRowid as number, created_at: createdAt };
+  let newId = 0;
+
+  updateStore((store) => {
+    newId = store.nextId;
+    store.nextId += 1;
+    store.blooms.push({
+      id: newId,
+      created_at: createdAt,
+      content,
+      status
+    });
+  });
+
+  return { id: newId, created_at: createdAt };
 };
 
 export const updateBloomStatus = (id: number, status: BloomStatus) => {
-  const stmt = db.prepare("UPDATE bloom_logs SET status = ? WHERE id = ?");
-  stmt.run(status, id);
+  updateStore((store) => {
+    const target = store.blooms.find((bloom) => bloom.id === id);
+    if (target) {
+      target.status = status;
+    }
+  });
 };
 
 export const getRecentBlooms = (limit = 10): BloomLog[] => {
-  const stmt = db.prepare(
-    "SELECT id, created_at, content, status, mode, intensity FROM bloom_logs ORDER BY id DESC LIMIT ?"
-  );
-  return stmt.all(limit) as BloomLog[];
+  const store = readStore();
+  return [...store.blooms]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, limit);
 };
 
-// --- Functions expected by lib/admin.ts ---
 export function createBloom(input: {
   mode?: string;
   intensity?: string;
   content: string;
   status: BloomStatus;
 }) {
-  const createdAt = new Date().toISOString();
-  const stmt = db.prepare(
-    "INSERT INTO bloom_logs (created_at, content, status, mode, intensity) VALUES (?, ?, ?, ?, ?)"
-  );
-  const info = stmt.run(
-    createdAt,
-    input.content,
-    input.status,
-    input.mode ?? null,
-    input.intensity ?? null
-  );
-  return Number(info.lastInsertRowid);
+  let newId = 0;
+
+  updateStore((store) => {
+    newId = store.nextId;
+    store.nextId += 1;
+    store.blooms.push({
+      id: newId,
+      created_at: new Date().toISOString(),
+      content: input.content,
+      status: input.status,
+      mode: input.mode ?? null,
+      intensity: input.intensity ?? null
+    });
+  });
+
+  return newId;
 }
 
 export function updateBloom(
   id: number,
   patch: { content?: string; status?: BloomStatus; mode?: string; intensity?: string }
 ) {
-  const fields: string[] = [];
-  const values: any[] = [];
+  updateStore((store) => {
+    const target = store.blooms.find((bloom) => bloom.id === id);
+    if (!target) return;
 
-  if (typeof patch.content === "string") {
-    fields.push("content = ?");
-    values.push(patch.content);
-  }
-  if (typeof patch.status === "string") {
-    fields.push("status = ?");
-    values.push(patch.status);
-  }
-  if (typeof patch.mode === "string") {
-    fields.push("mode = ?");
-    values.push(patch.mode);
-  }
-  if (typeof patch.intensity === "string") {
-    fields.push("intensity = ?");
-    values.push(patch.intensity);
-  }
-
-  if (fields.length === 0) return;
-
-  values.push(id);
-  const stmt = db.prepare(`UPDATE bloom_logs SET ${fields.join(", ")} WHERE id = ?`);
-  stmt.run(...values);
+    if (typeof patch.content === "string") {
+      target.content = patch.content;
+    }
+    if (typeof patch.status === "string") {
+      target.status = patch.status;
+    }
+    if (typeof patch.mode === "string") {
+      target.mode = patch.mode;
+    }
+    if (typeof patch.intensity === "string") {
+      target.intensity = patch.intensity;
+    }
+  });
 }
 
 export function listBlooms(limit = 10): BloomLog[] {

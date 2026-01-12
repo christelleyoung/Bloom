@@ -71,3 +71,38 @@ export const sendSequenceStep = async (subject: string, content: string) => {
 
   return response.json();
 };
+
+export const sendApprovedBloom = async (content: string) =>
+  sendBroadcast("Bloom, bitch.", content);
+
+export const sendTestBloom = async (email: string, content: string) => {
+  if (!CONVERTKIT_API_KEY) {
+    throw new Error("ConvertKit is not configured.");
+  }
+
+  const broadcast = await sendBroadcast("Bloom (Test)", content);
+  const broadcastId = (broadcast as any)?.id || (broadcast as any)?.broadcast?.id;
+
+  if (!broadcastId) {
+    return broadcast;
+  }
+
+  const response = await fetch(
+    `${baseUrl}/broadcasts/${broadcastId}/send_preview`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: CONVERTKIT_API_KEY,
+        email_address: email
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.message || "ConvertKit preview failed.");
+  }
+
+  return response.json();
+};
