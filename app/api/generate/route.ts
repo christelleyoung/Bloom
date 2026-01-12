@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
-import { logBloom } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const FALLBACK_MESSAGE =
+  "Still counts. Still showed up. Still dangerous. Now go.";
+
+const MAX_ATTEMPTS = 3;
 
 const SYSTEM_PROMPT = `You are BLOOMBIATCH, a savage best-friend motivator.
 Rules:
@@ -43,14 +50,11 @@ const buildUserPrompt = (mode: string, intensity: string) =>
 export async function POST(request: Request) {
   try {
     if (!openai) {
-      console.error("[api/generate] OpenAI client missing");
-      return NextResponse.json(
-        { error: "OpenAI is not configured." },
-        { status: 500 }
-      );
+      console.warn("[api/generate] OpenAI client missing");
+      return NextResponse.json({ content: FALLBACK_MESSAGE });
     }
 
-    let mode = "Work";
+    let mode = "Daily";
     let intensity = "Hard";
 
     try {
@@ -59,19 +63,14 @@ export async function POST(request: Request) {
       if (body?.intensity) intensity = String(body.intensity);
     } catch (error) {
       console.warn("[api/generate] Failed to parse JSON body", error);
-      return NextResponse.json(
-        { error: "Invalid JSON body." },
-        { status: 400 }
-      );
+      return NextResponse.json({ content: FALLBACK_MESSAGE });
     }
 
     console.log("[api/generate] request received", { mode, intensity });
 
-    let attempt = 0;
     let content = "";
 
-    while (attempt < 4) {
-      attempt += 1;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
       const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
@@ -89,23 +88,13 @@ export async function POST(request: Request) {
     }
 
     if (!content || !isValidBloom(content)) {
-      console.warn("[api/generate] failed safety checks", { attempt, mode, intensity });
-      return NextResponse.json(
-        { error: "Generation failed safety checks." },
-        { status: 500 }
-      );
+      console.warn("[api/generate] failed safety checks", { mode, intensity });
+      return NextResponse.json({ content: FALLBACK_MESSAGE });
     }
 
-    const log = logBloom(content, "draft");
-    console.log("[api/generate] generated bloom", { logId: log.id });
-
-    return NextResponse.json({ content, logId: log.id });
+    return NextResponse.json({ content });
   } catch (error) {
     console.error("[api/generate] unexpected error", error);
-    const message = error instanceof Error ? error.message : "Unknown error.";
-    return NextResponse.json(
-      { error: "Failed to generate bloom.", details: message },
-      { status: 500 }
-    );
+    return NextResponse.json({ content: FALLBACK_MESSAGE });
   }
 }

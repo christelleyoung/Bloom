@@ -34,7 +34,7 @@ export default function AdminDashboard({ initialLogs }: { initialLogs: LogEntry[
 
     try {
       console.log("[admin] generate bloom request", { mode, intensity });
-      const response = await fetch("/api/generate", {
+      const response = await fetch("/api/admin/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode, intensity })
@@ -57,18 +57,18 @@ export default function AdminDashboard({ initialLogs }: { initialLogs: LogEntry[
       if (!response.ok) {
         throw new Error(data?.error || "Generation failed.");
       }
-      if (!data?.content || !data?.logId) {
+      if (!data?.message || !data?.logId) {
         throw new Error("Generation succeeded but response payload is missing.");
       }
 
-      setContent(data.content);
+      setContent(data.message);
       setLogId(data.logId);
       setStatus("idle");
       setLogs((prev) => [
         {
           id: data.logId,
           created_at: new Date().toISOString(),
-          content: data.content,
+          content: data.message,
           status: "draft"
         },
         ...prev

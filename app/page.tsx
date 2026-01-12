@@ -1,4 +1,5 @@
 
+import DailyBloomClient from "@/components/DailyBloomClient";
 import EmailSignup from "@/components/EmailSignup";
 
 const manifesto = `I am not your therapist.
@@ -88,15 +89,12 @@ export default function HomePage() {
             Just take today’s kick in the ass and go. No commitment. No inbox. No
             excuses.
           </p>
-          <button className="mt-8 rounded-full bg-white px-6 py-3 text-sm font-semibold text-neutral-950 transition hover:bg-neutral-200">
-            Generate today’s Bloom
-          </button>
-          <div className="mt-6 rounded-3xl border border-neutral-800 bg-neutral-950 p-6 text-sm text-neutral-200">
-            <p>Listen up, legend.</p>
-            <p>Hard mode means you don’t get to whine today.</p>
-            <p>Get off your ass and prove you can handle it.</p>
-            <p>Excuses are for rookies — let’s crush this.</p>
-            <p>Now get moving and show the world who’s boss.</p>
+          <div className="mt-8">
+            <DailyBloomClient
+              kicker="No Signup"
+              title="Generate today’s Bloom"
+              description="Tap the button and get a savage kick in the ass."
+            />
           </div>
         </div>
       </section>
