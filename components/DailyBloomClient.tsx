@@ -13,24 +13,40 @@ export default function DailyBloomClient({
   title = "Today’s Bloom",
   description = "Tap the button and we’ll generate a fresh Bloom right now.",
 }: DailyBloomClientProps) {
+  const fallbackMessage =
+    "Still counts. Still showed up. Still dangerous. Now go.";
   const [message, setMessage] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
-  const [error, setError] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
 
   const generate = async () => {
     setStatus("loading");
-    setError("");
     try {
-      const response = await fetch("/api/bloom/today", { cache: "no-store" });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error || "Failed to generate Bloom.");
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({})
+      });
+      const rawText = await response.text();
+      let payload: { content?: string } | null = null;
+      try {
+        payload = rawText ? JSON.parse(rawText) : null;
+      } catch (parseError) {
+        console.error("[daily bloom] non-JSON response", parseError, rawText);
       }
-      setMessage(payload.message);
+
+      if (!response.ok || !payload?.content) {
+        setMessage(fallbackMessage);
+        setStatus("success");
+        return;
+      }
+
+      setMessage(payload.content);
       setStatus("success");
     } catch (err) {
-      setStatus("error");
-      setError(err instanceof Error ? err.message : "Failed to generate Bloom.");
+      console.error("[daily bloom] failed to generate", err);
+      setMessage(fallbackMessage);
+      setStatus("success");
     }
   };
 
@@ -47,10 +63,6 @@ export default function DailyBloomClient({
       >
         {status === "loading" ? "Generating..." : "Generate today’s Bloom"}
       </button>
-
-      {status === "error" ? (
-        <p className="mt-4 text-sm text-red-400">{error}</p>
-      ) : null}
 
       {message ? (
         <div className="mt-6 rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6">

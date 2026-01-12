@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
-import { logBloom } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const FALLBACK_MESSAGE =
+  "Still counts. Still showed up. Still dangerous. Now go.";
+
+const MAX_ATTEMPTS = 3;
 
 const SYSTEM_PROMPT = `You are BLOOMBIATCH, a savage best-friend motivator.
 Rules:
@@ -41,44 +48,53 @@ const buildUserPrompt = (mode: string, intensity: string) =>
   `Write today's Bloom. Mode: ${mode}. Intensity: ${intensity}. Keep it raw and motivating.`;
 
 export async function POST(request: Request) {
-  if (!openai) {
-    return NextResponse.json(
-      { error: "OpenAI is not configured." },
-      { status: 500 }
-    );
-  }
-
-  const { mode, intensity } = await request.json();
-
-  let attempt = 0;
-  let content = "";
-
-  while (attempt < 4) {
-    attempt += 1;
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildUserPrompt(mode, intensity) }
-      ],
-      temperature: 0.9
-    });
-
-    content = normalize(response.choices[0]?.message?.content || "");
-
-    if (isValidBloom(content)) {
-      break;
+  try {
+    if (!openai) {
+      console.warn("[api/generate] OpenAI client missing");
+      return NextResponse.json({ content: FALLBACK_MESSAGE });
     }
+
+    let mode = "Daily";
+    let intensity = "Hard";
+
+    try {
+      const body = await request.json();
+      if (body?.mode) mode = String(body.mode);
+      if (body?.intensity) intensity = String(body.intensity);
+    } catch (error) {
+      console.warn("[api/generate] Failed to parse JSON body", error);
+      return NextResponse.json({ content: FALLBACK_MESSAGE });
+    }
+
+    console.log("[api/generate] request received", { mode, intensity });
+
+    let content = "";
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: buildUserPrompt(mode, intensity) }
+        ],
+        temperature: 0.9
+      });
+
+      content = normalize(response.choices[0]?.message?.content || "");
+
+      if (isValidBloom(content)) {
+        break;
+      }
+    }
+
+    if (!content || !isValidBloom(content)) {
+      console.warn("[api/generate] failed safety checks", { mode, intensity });
+      return NextResponse.json({ content: FALLBACK_MESSAGE });
+    }
+
+    return NextResponse.json({ content });
+  } catch (error) {
+    console.error("[api/generate] unexpected error", error);
+    return NextResponse.json({ content: FALLBACK_MESSAGE });
   }
-
-  if (!content || !isValidBloom(content)) {
-    return NextResponse.json(
-      { error: "Generation failed safety checks." },
-      { status: 500 }
-    );
-  }
-
-  const log = logBloom(content, "draft");
-
-  return NextResponse.json({ content, logId: log.id });
 }

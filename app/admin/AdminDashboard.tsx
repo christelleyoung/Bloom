@@ -33,26 +33,42 @@ export default function AdminDashboard({ initialLogs }: { initialLogs: LogEntry[
     setContent("");
 
     try {
-      const response = await fetch("/api/generate", {
+      console.log("[admin] generate bloom request", { mode, intensity });
+      const response = await fetch("/api/admin/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode, intensity })
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Generation failed.");
+      const rawText = await response.text();
+      console.log("[admin] generate bloom response", {
+        status: response.status,
+        ok: response.ok,
+        body: rawText
+      });
+      let data: any = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch (parseError) {
+        console.error("[admin] generate bloom non-JSON response", parseError);
+        throw new Error("Unexpected response from server. Check console for details.");
       }
 
-      setContent(data.content);
+      if (!response.ok) {
+        throw new Error(data?.error || "Generation failed.");
+      }
+      if (!data?.message || !data?.logId) {
+        throw new Error("Generation succeeded but response payload is missing.");
+      }
+
+      setContent(data.message);
       setLogId(data.logId);
       setStatus("idle");
       setLogs((prev) => [
         {
           id: data.logId,
           created_at: new Date().toISOString(),
-          content: data.content,
+          content: data.message,
           status: "draft"
         },
         ...prev
@@ -69,14 +85,27 @@ export default function AdminDashboard({ initialLogs }: { initialLogs: LogEntry[
     setError("");
 
     try {
+      console.log("[admin] approve bloom request", { logId, delivery });
       const response = await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, logId, delivery })
       });
-      const data = await response.json();
+      const rawText = await response.text();
+      console.log("[admin] approve bloom response", {
+        status: response.status,
+        ok: response.ok,
+        body: rawText
+      });
+      let data: any = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch (parseError) {
+        console.error("[admin] approve bloom non-JSON response", parseError);
+        throw new Error("Unexpected response from server. Check console for details.");
+      }
       if (!response.ok) {
-        throw new Error(data.error || "Approval failed.");
+        throw new Error(data?.error || "Approval failed.");
       }
       setStatus("approved");
       setLogs((prev) =>
